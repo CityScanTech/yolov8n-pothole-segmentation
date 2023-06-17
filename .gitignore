@@ -2,6 +2,9 @@
 /venv/
 /.idea/
 dataset
+runs
+wandb
+*.pt
 
 
 # copy from 'https://github.com/github/gitignore/blob/main/Python.gitignore'

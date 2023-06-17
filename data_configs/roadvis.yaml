@@ -1,0 +1,17 @@
+train: [
+  C:\Users\dongd\Desktop\cityscan-roadeye-yolov8-for-pothole\RoadVisSegmentation.v2i.coco-segmentation\train,
+  C:\Users\dongd\Desktop\cityscan-roadeye-yolov8-for-pothole\RoadVisSegmentation.v2i.coco-segmentation\valid,
+  C:\Users\dongd\Desktop\cityscan-roadeye-yolov8-for-pothole\RoadVisSegmentation.v2i.coco-segmentation\test,
+  C:\Users\dongd\Desktop\cityscan-roadeye-yolov8-for-pothole\coco2yolo8.v5i.yolov8\test
+]
+val: [
+  C:\Users\dongd\Desktop\cityscan-roadeye-yolov8-for-pothole\coco2yolo8.v5i.yolov8\train,
+  C:\Users\dongd\Desktop\cityscan-roadeye-yolov8-for-pothole\coco2yolo8.v5i.yolov8\valid,
+]
+test: [
+  C:\Users\dongd\Desktop\cityscan-roadeye-yolov8-for-pothole\coco2yolo8.v5i.yolov8\train,
+  C:\Users\dongd\Desktop\cityscan-roadeye-yolov8-for-pothole\coco2yolo8.v5i.yolov8\valid,
+]
+
+nc: 3
+names: {'0':'pothole', '1':'pothole_patch_good', '2':'pothole_patch_poor'}
