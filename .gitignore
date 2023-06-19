@@ -5,6 +5,7 @@ dataset
 runs
 wandb
 *.pt
+*.swp
 
 
 # copy from 'https://github.com/github/gitignore/blob/main/Python.gitignore'
