@@ -1,0 +1,23 @@
+train: [
+  C:\Users\dongd\Desktop\pothole_datasets\RoadVisSegmentation.v2i.coco-segmentation\train,
+  C:\Users\dongd\Desktop\pothole_datasets\RoadVisSegmentation.v2i.coco-segmentation\valid,
+  C:\Users\dongd\Desktop\pothole_datasets\RoadVisSegmentation.v2i.coco-segmentation\test,
+  C:\Users\dongd\Desktop\pothole_datasets\qipei-pothole\qipei-pothole.v2i.yolov8\train, 
+  C:\Users\dongd\Desktop\pothole_datasets\coco2yolo8.v8i.yolov8\train, 
+  C:\Users\dongd\Desktop\pothole_datasets\coco2yolo8.v8i.yolov8\train, 
+]
+val: [
+  C:\Users\dongd\Desktop\pothole_datasets\coco2yolo8.v8i.yolov8\valid, 
+  C:\Users\dongd\Desktop\pothole_datasets\coco2yolo8.v8i.yolov8\test, 
+  C:\Users\dongd\Desktop\pothole_datasets\qipei-pothole\qipei-pothole.v2i.yolov8\test, 
+  C:\Users\dongd\Desktop\pothole_datasets\qipei-pothole\qipei-pothole.v2i.yolov8\valid, 
+]
+test: [
+  C:\Users\dongd\Desktop\pothole_datasets\coco2yolo8.v8i.yolov8\valid, 
+  C:\Users\dongd\Desktop\pothole_datasets\coco2yolo8.v8i.yolov8\test, 
+  C:\Users\dongd\Desktop\pothole_datasets\qipei-pothole\qipei-pothole.v2i.yolov8\test, 
+  C:\Users\dongd\Desktop\pothole_datasets\qipei-pothole\qipei-pothole.v2i.yolov8\valid, 
+]
+
+nc: 2
+names: {'0':'pothole', '1':'patch'}
