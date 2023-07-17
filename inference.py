@@ -8,7 +8,6 @@ from ultralyticsplus import render_result
 from ultralytics import YOLO
 import cv2
 import numpy as np
-from detectron2.structures.masks import BitMasks, PolygonMasks, polygons_to_bitmask
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
@@ -30,24 +29,24 @@ if __name__ == '__main__':
 
     # Loop through each file
     for image in file_list:
+        
         file_name = os.path.basename(image)
         print("Predict result for image: " + file_name)
+        mask_folder = os.path.join(filePath+'_result', file_name.split('.')[0])
+        os.makedirs(mask_folder, exist_ok=True)
 
         # perform inference
         results = model.predict(image)
 
-        # save label txt
-        results[0].save_txt(os.path.join('dataset/inference_result', file_name+'.txt'))
-        for xy in results[0].masks.xy:
-            mask = np.zeros((results[0].orig_shape))
-            cv2.fillConvexPoly(mask, xy, 1)
-            mask = mask > 0 # To convert to Boolean
-            cv2.imshow('Extracted Image', mask)
-            import pdb
-            pdb.set_trace()
+        if not results[0].masks: continue
 
-
-
+        for i in range(len(results[0].masks)):
+            mask = results[0].masks.data[i,:,:] #.cpu().numpy()
+            mask = mask.cpu().numpy() # To convert to Boolean
+            mask = mask[np.newaxis, :]
+            mask = 255*np.transpose(mask, (1, 2, 0))
+            # cv2.imshow("Image", cv2_image)
+            cv2.imwrite(os.path.join(mask_folder, 'mask_{}.png'.format(i)), mask)
 
         # observe results
         # print(results[0].boxes)
@@ -55,5 +54,6 @@ if __name__ == '__main__':
         render = render_result(model=model, image=image, result=results[0])
         render.save('dataset/inference_result/' + file_name, 'png')
         # render.show()
-        import pdb
-        pdb.set_trace()
+
+        # save label txt
+        results[0].save_txt(os.path.join('dataset/inference_result', file_name+'.txt'))
