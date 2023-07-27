@@ -4,6 +4,7 @@
 # Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
 import glob
 import os
+import torch
 from ultralyticsplus import render_result
 from ultralytics import YOLO
 import cv2
@@ -11,6 +12,9 @@ import numpy as np
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
+
+    # get label map
+    label_dict = {0:'pothole', 1:'patch'}
 
     # load model
     model = YOLO(r"runs\segment\train3\weights\best.pt")
@@ -40,20 +44,31 @@ if __name__ == '__main__':
 
         if not results[0].masks: continue
 
+        merge_mask = {0:[],1:[]}
+
         for i in range(len(results[0].masks)):
             mask = results[0].masks.data[i,:,:] #.cpu().numpy()
             mask = mask.cpu().numpy() # To convert to Boolean
             mask = mask[np.newaxis, :]
             mask = 255*np.transpose(mask, (1, 2, 0))
+            label = int(results[0].boxes.cls[i].item())
+            category = label_dict[label]
+            merge_mask[label].append(mask)
             # cv2.imshow("Image", cv2_image)
-            cv2.imwrite(os.path.join(mask_folder, 'mask_{}.png'.format(i)), mask)
+            cv2.imwrite(os.path.join(mask_folder, '{}_{}.png'.format(category,i)), mask)
+        for k, v in merge_mask.items():
+            if not v: continue
+            mask_k = np.sum(np.stack(v, axis=0), axis=0)
+            cv2.imwrite(os.path.join(mask_folder, '{}.png'.format(label_dict[k])), mask_k)
+        
+        # cli: ImageMagick to merge masks into a psd file
 
-        # observe results
-        # print(results[0].boxes)
-        # print(results[0].masks)
-        render = render_result(model=model, image=image, result=results[0])
-        render.save('dataset/inference_result/' + file_name, 'png')
-        # render.show()
+        # # observe results
+        # # print(results[0].boxes)
+        # # print(results[0].masks)
+        # render = render_result(model=model, image=image, result=results[0])
+        # render.save('dataset/inference_result/' + file_name, 'png')
+        # # render.show()
 
-        # save label txt
-        results[0].save_txt(os.path.join('dataset/inference_result', file_name+'.txt'))
+        # # save label txt
+        # results[0].save_txt(os.path.join('dataset/inference_result', file_name+'.txt'))
