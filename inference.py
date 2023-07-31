@@ -1,7 +1,5 @@
-# This is a sample Python script.
+#! ~/bin/python3
 
-# Press Shift+F10 to execute it or replace it with your code.
-# Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
 import glob
 import os
 import subprocess
@@ -14,8 +12,10 @@ from psd_tools import PSDImage
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
 
-    # get label map
-    label_dict = {0:'pothole', 1:'patch'}
+    # pre-set layer names in the PSD files
+    layer_names = ['pothole', 'patch']
+    # example: 
+    # layer_names = ['pothole', 'patch', 'patch_poor', 'transverse']
 
     # load model
     model = YOLO(r"runs\segment\train3\weights\best.pt")
@@ -28,49 +28,53 @@ if __name__ == '__main__':
 
     # load images
     filePath = 'dataset/inference'
+    resultPath = filePath+'_result'
 
     # Get a list of all files in the directory
     file_list = glob.glob(os.path.join(filePath, '*'))
 
     # Loop through each file
-    for image in file_list:
+    for image_path in file_list:
         
-        file_name = os.path.basename(image)
-        print("Predict result for image: " + file_name)
-        mask_folder = os.path.join(filePath+'_result', file_name.split('_')[0])
+        file_name = os.path.basename(image_path)
+        image_name = file_name.split('_')[0]
+        print("Predict result for image: " + image_name)
+        mask_folder = os.path.join(resultPath, image_name)
         os.makedirs(mask_folder, exist_ok=True)
 
         # perform inference
-        results = model.predict(image)
+        results = model.predict(image_path)
+        result = results[0]
         # save masks as png files
-        h, w = results[0].orig_shape
+        h, w = result.orig_shape
         blank_rgb = np.zeros((h,w,3))
         alpha_channel = np.zeros((h,w)) 
         blank_image = cv2.merge((blank_rgb, alpha_channel))
-        # cv2.imwrite(os.path.join(mask_folder, 'bkg.png'), blank_image) 
-        if not results[0].masks: 
-            cv2.imwrite(os.path.join(mask_folder, 'pothole.png'), blank_image) 
-            cv2.imwrite(os.path.join(mask_folder, 'patch.png'), blank_image) 
+        if not result.masks: 
+            for name in layer_names:
+                cv2.imwrite(os.path.join(mask_folder, '{}.png'.format(name)), blank_image) 
         else:
-            merge_mask = {0:[],1:[]}
-            for i in range(len(results[0].masks)):
-                mask = results[0].masks.data[i,:,:] #.cpu().numpy()
-                mask = mask.cpu().numpy() # To convert to Boolean
+            merge_mask = {k:[] for k in layer_names}
+            for i in range(len(result.masks)): # get all predicted instances
+                mask = result.masks.data[i,:,:] 
+                mask = mask.cpu().numpy() # To convert to numpy
                 mask = cv2.resize(mask, (w,h))
-                mask[mask>0] = 255
-                alpha = mask.copy()
+                mask[mask>0] = 255 # hard threshold
+                alpha = mask.copy() # construct alpha layer (for transparency)
                 mask = mask[np.newaxis, :]
                 mask = np.transpose(mask, (1, 2, 0))
-                label = int(results[0].boxes.cls[i].item())
-                category = label_dict[label]
-                merge_mask[label].append(mask)
+                label = int(result.boxes.cls[i].item())
+                category = result.names[label]
+                merge_mask[category].append(mask)
                 mask = 255-mask
                 mask = cv2.cvtColor(mask, cv2.COLOR_GRAY2BGR)
                 mask = cv2.merge((mask, alpha))
-                cv2.imwrite(os.path.join(mask_folder, '{}_{}.png'.format(category,i)), mask)
-            for k, v in merge_mask.items():
+                cv2.imwrite(os.path.join(
+                    mask_folder, '{}_{}.png'.format(category,len(merge_mask[category]))
+                ), mask)
+            for k, v in merge_mask.items(): # combine all instances of each category 
                 if not v: 
-                    cv2.imwrite(os.path.join(mask_folder, '{}.png'.format(label_dict[k])), blank_image) 
+                    cv2.imwrite(os.path.join(mask_folder, '{}.png'.format(k)), blank_image) 
                     continue
                 mask_k = np.sum(np.stack(v, axis=0), axis=0)
                 mask_k[mask_k>0] = 255
@@ -78,40 +82,37 @@ if __name__ == '__main__':
                 mask_k = 255-mask_k
                 mask_k = cv2.cvtColor(mask_k, cv2.COLOR_GRAY2BGR)
                 mask_k = cv2.merge((mask_k, alpha_k))
-                cv2.imwrite(os.path.join(mask_folder, '{}.png'.format(label_dict[k])), mask_k)
+                cv2.imwrite(os.path.join(mask_folder, '{}.png'.format(k)), mask_k)
 
         # cli: ImageMagick to merge masks into a psd file
-        psd_components = [
-            image,
-            image,
-        ]
-        for c in ['pothole', 'patch']: 
-            c_path = os.path.join(mask_folder, c+'.png')
-            if os.path.isfile(c_path):
-                psd_components.append(c_path)
+        psd_components = [image_path,image_path]
+        for name in layer_names:
+            mask_path = os.path.join(mask_folder, name+'.png')
+            if os.path.isfile(mask_path):
+                psd_components.append(mask_path)
         cmd = [
             "magick", 
         #     "-background", "white",
         #     "-gravity", "center",
         ]
-        output_path = [os.path.join('./dataset/inference_result', '{}.psd'.format(file_name.split('_')[0]))]
+        output_path = [os.path.join(resultPath, '{}.psd'.format(image_name))]
         cmd = cmd + psd_components + output_path
         p = subprocess.run(cmd, capture_output=True)
         # print(p)
 
         # change layers names in psd files
-        layer_names = ['overhead', 'pothole', 'patch']
         psd = PSDImage.open(output_path[0])
         for i, layer in enumerate(psd):
-            layer.name = layer_names[i]
+            if i==0: 
+                layer.name = 'overhead' 
+            else: 
+                layer.name = layer_names[i-1]
         psd.save(output_path[0])
 
         # observe results
-        # print(results[0].boxes)
-        # print(results[0].masks)
-        render = render_result(model=model, image=image, result=results[0])
-        render.save('dataset/inference_result/' + file_name, 'png')
+        render = render_result(model=model, image=image_path, result=result)
+        render.save(os.path.join(resultPath, '{}.png'.format(image_name)))
         # render.show()
 
         # save label txt
-        results[0].save_txt(os.path.join('dataset/inference_result', file_name+'.txt'))
+        result.save_txt(os.path.join(resultPath, '{}.txt'.format(file_name)))

@@ -24,5 +24,3 @@ if __name__ == '__main__':
     print('Recall:\t{}\t{}'.format(results.seg.r[0], results.seg.r[1]))
     print('f1:\t{}\t{}'.format(results.seg.f1[0], results.seg.f1[1]))
 
-    import pdb
-    pdb.set_trace()
