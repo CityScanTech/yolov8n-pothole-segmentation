@@ -9,6 +9,7 @@ from ultralyticsplus import render_result
 from ultralytics import YOLO
 import cv2
 import numpy as np
+from psd_tools import PSDImage
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
@@ -46,7 +47,7 @@ if __name__ == '__main__':
         blank_rgb = np.zeros((h,w,3))
         alpha_channel = np.zeros((h,w)) 
         blank_image = cv2.merge((blank_rgb, alpha_channel))
-        cv2.imwrite(os.path.join(mask_folder, 'bkg.png'), blank_image) 
+        # cv2.imwrite(os.path.join(mask_folder, 'bkg.png'), blank_image) 
         if not results[0].masks: 
             cv2.imwrite(os.path.join(mask_folder, 'pothole.png'), blank_image) 
             cv2.imwrite(os.path.join(mask_folder, 'patch.png'), blank_image) 
@@ -77,9 +78,6 @@ if __name__ == '__main__':
                 mask_k = 255-mask_k
                 mask_k = cv2.cvtColor(mask_k, cv2.COLOR_GRAY2BGR)
                 mask_k = cv2.merge((mask_k, alpha_k))
-                # import pdb
-                # pdb.set_trace()
-                # mask_k = cv2.resize(mask_k, (w,h))
                 cv2.imwrite(os.path.join(mask_folder, '{}.png'.format(label_dict[k])), mask_k)
 
         # cli: ImageMagick to merge masks into a psd file
@@ -98,12 +96,15 @@ if __name__ == '__main__':
         ]
         output_path = [os.path.join('./dataset/inference_result', '{}.psd'.format(file_name.split('_')[0]))]
         cmd = cmd + psd_components + output_path
-
         p = subprocess.run(cmd, capture_output=True)
-        print(p)
+        # print(p)
 
-        # TODO: change layers names in psd files
-
+        # change layers names in psd files
+        layer_names = ['overhead', 'pothole', 'patch']
+        psd = PSDImage.open(output_path[0])
+        for i, layer in enumerate(psd):
+            layer.name = layer_names[i]
+        psd.save(output_path[0])
 
         # observe results
         # print(results[0].boxes)
