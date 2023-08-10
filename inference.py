@@ -13,9 +13,16 @@ from psd_tools import PSDImage
 if __name__ == '__main__':
 
     # pre-set layer names in the PSD files
-    layer_names = ['pothole', 'patch']
+    # layer_names = ['pothole', 'patch']
     # example: 
-    # layer_names = ['pothole', 'patch', 'patch_poor', 'transverse']
+    layer_names = [
+        'transverse', 'transverse_seal_good', 'transverse_seal_poor', 
+        'longitudinal', 'longitudinal_seal_good', 'longitudinal_seal_poor', 
+        'alligator', 'alligator_seal_good', 'alligator_seal_poor', 
+        'block', 'block_seal_good', 'block_seal_poor', 
+        'slippage', 
+        'pothole', 'patch', 'patch_poor'
+    ]
 
     # load model
     model = YOLO(r"runs\segment\train3\weights\best.pt")
@@ -66,9 +73,9 @@ if __name__ == '__main__':
                 label = int(result.boxes.cls[i].item())
                 category = result.names[label]
                 merge_mask[category].append(mask)
-                mask = 255-mask
-                mask = cv2.cvtColor(mask, cv2.COLOR_GRAY2BGR)
-                mask = cv2.merge((mask, alpha))
+                mask = 255-mask # revert black/white
+                mask = cv2.cvtColor(mask, cv2.COLOR_GRAY2BGR) # 1 channel to 3 channels
+                mask = cv2.merge((mask, alpha)) # add alpha channel (4 channels in total)
                 cv2.imwrite(os.path.join(
                     mask_folder, '{}_{}.png'.format(category,len(merge_mask[category]))
                 ), mask)
